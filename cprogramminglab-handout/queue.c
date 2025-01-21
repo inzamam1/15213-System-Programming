@@ -26,18 +26,24 @@
 queue_t *queue_new(void) {
     queue_t *q = malloc(sizeof(queue_t));
     /* What if malloc returned NULL? */
-    if(q==NULL){
+    // https://www.youtube.com/watch?v=7icNeEZ8PDo&t=744s - Basics of dynamic
+    // memory https://www.youtube.com/watch?v=pTXvkLlAm38 - How to use Malloc in
+    // C
+    if (q == NULL) {
         free(q);
         return 0;
-        //code to handle null value
-    }
-    else{
+        // code to handle null value
+    } else {
         q->head = NULL;
-        q->back = NULL;
+        // This pointer is there to hold value in the last so that a new element
+        // can be added at the tail!
+        q->back = NULL; // int
+        // As we need the length in O(1) and if we traverse the list and update
+        // length, it will take O(n), idea for O(1) is to update the lenght on
+        // addition and deletion of list element
         q->len = 0;
         return q;
     }
-    
 }
 
 /**
@@ -47,24 +53,29 @@ queue_t *queue_new(void) {
 void queue_free(queue_t *q) {
     /* How about freeing the list elements and the strings? */
     /* Free queue structure */
-    list_ele_t *newh;//pointers to the struct to iterate and free one by one
-    list_ele_t *newh2;
-    //check weather the queue is not intialised yet
-    if (q==NULL){
+    if (q == NULL) {
         return;
+    } else {
+        list_ele_t
+            *newh; // pointers to the struct to iterate and free one by one
+        list_ele_t *newh2;
+        // check weather the queue is not intialised yet
+        newh = q->head; // to traverse first initialise our list item to the
+                        // address of the current queue start
+        while (newh != NULL) {
+            // loop to first remove the element at head
+            newh2 = newh->next;
+            // store the next value(second node address)so that our list is not
+            // lost while we delete the first node
+            free(newh->value); // free the string value also
+            free(newh);        // free the struct pointer
+            // save the next node's address in current node and continue the
+            // process
+            newh = newh2;
+        }
     }
-    else{
-        newh=q->head;
-        while(newh!=NULL){
-            newh2=newh->next;
-            free(newh->value);
-            free(newh);
-            newh=newh2;
-    }
-    }
-    //Freed by iterating over
+    // Freed by iterating over-this is to free the entire queue as well
     free(q);
-    
 }
 
 /**
@@ -80,51 +91,61 @@ void queue_free(queue_t *q) {
  * @return false if q is NULL, or memory allocation failed
  */
 bool queue_insert_head(queue_t *q, const char *s) {
-    list_ele_t *newh;
+    // https://www.youtube.com/watch?v=o1QaGUEi6ew&list=PLVlQHNRLflP_OxF1QJoGBwH_TnZszHR_j&index=7
+    // - basic operations on list
     /* What should you do if the q is NULL? */
-    
-    //return false;??
-    if (q==NULL){
-        return false; 
-    }
-    else{
+    // return false;??
+
+    if (q == NULL) {
+        return false;
+    } else {
+        list_ele_t *newh;
         newh = malloc(sizeof(list_ele_t));
-        if(newh==NULL){
-            //remove all the contents from both
+        if (newh == NULL) {
+            // free if wrong malloc initialisation as mentioned above
             free(newh);
             return false;
         }
         /* What if either call to malloc returns NULL? */
-        // if( newh==NULL){
+        // if( newh==NULL||newh->value==NULL){
         //     //remove all the contents from both
         //     free(newh);
+        //     free(newh->value);
         //     return false;
         // }
         else {
             /* Don't forget to allocate space for the string and copy it */
-            newh->value=malloc(strlen(s)+1);//+1 for the null character
-            newh->next=NULL;
-            if(newh->value==NULL){
+            newh->value = malloc(strlen(s) + 1); //+1 for the 0(null) character
+            // set the newly created struct next pointer to null, we will update
+            // this later
+            newh->next = NULL;
+            // Malloc issue check
+            if (newh->value == NULL) {
                 free(newh->value);
                 free(newh);
                 return false;
-            }
-            else{
-                //if this is the first element, then assign the address to back also
-                if(q->back==NULL){
-                    q->back=newh;
-                    q->len=1;
-                }
-                else{
+            } else {
+                // if this is the first element, then assign the address to back
+                // also, this will help in tail insertion
+                if (q->back == NULL) {
+                    q->back = newh; // check if first element and then assign
+                                    // the first block address to back pointer
+                    // Update length as we add element
+                    q->len = 1;
+                } else {
+                    // Length update
                     q->len++;
-                }      
-                strcpy(newh->value,s);
+                }
+                // Allgood, copy the string into our value field
+                strcpy(newh->value, s);
+                // assign the address of the previous node which is stored in
+                // head to the next
                 newh->next = q->head;
-                q->head = newh;
+                q->head = newh; // store current node address to the begining
                 return true;
             }
         }
-    }        
+    }
 }
 
 /**
@@ -142,34 +163,35 @@ bool queue_insert_head(queue_t *q, const char *s) {
 bool queue_insert_tail(queue_t *q, const char *s) {
     /* You need to write the complete code for this function */
     /* Remember: It should operate in O(1) time */
-    list_ele_t *newh;
-    if(q==NULL){
+    // check null queue
+    if (q == NULL) {
         return false;
-    }
-    else{
+    } else {
+        list_ele_t *newh;
         newh = malloc(sizeof(list_ele_t));
-        if(newh==NULL){
+        if (newh == NULL) { // check malloc failure
             free(newh);
             return false;
-        }
-        else{
-            newh->value=malloc(strlen(s)+1);
-            newh->next=NULL;
-            if(newh->value==NULL){
-                //remove all the contents from both
+        } else {
+            newh->value = malloc(strlen(s) + 1);
+            newh->next = NULL;
+            if (newh->value == NULL) {
+                // remove all the contents from both
                 free(newh->value);
                 free(newh);
                 return false;
-            }
-            else{
-                strcpy(newh->value,s);
-                if (q->back==NULL){
-                    q->head=q->back=newh;
+            } else {
+                // All good, no malloc issue, now copy
+                strcpy(newh->value, s);
+                // first element check and update both pointers
+                if (q->back == NULL) {
+                    q->head = newh;
+                    q->back = newh;
                     q->len++;
-                }
-                else{
-                    q->back->next=newh;
-                    q->back=newh;
+                } else {
+                    // elements in list, so update the last block, i.e back
+                    q->back->next = newh;
+                    q->back = newh;
                     q->len++;
                 }
                 return true;
@@ -197,25 +219,38 @@ bool queue_insert_tail(queue_t *q, const char *s) {
  */
 bool queue_remove_head(queue_t *q, char *buf, size_t bufsize) {
     /* You need to fix up this code. */
-    list_ele_t *newh;
-    if (q==NULL||q->head==NULL){
+    // First check if the queue is bad address or if the address is correct but
+    // queue empty
+    if (q == NULL || q->head == NULL) {
+        // q->head to check if the queue is empty
         return false;
     }
-    newh=q->head;
+    list_ele_t *newh;
+    // assigning a new struct element so that we can perform deletion using it
+    newh = q->head;
+    // storing the next in the list item from head as we will be removing
+    // element from head but appending the new head to next value 2->1, 1 delete
     q->head = q->head->next;
-    if (q->head==NULL){
-        q->back=NULL;
+    if (q->head == NULL) {
+        // this will check if there are no elements after the deletion will
+        // happen
+        q->back = NULL; // update the back pointer to null too. queue empty
     }
-    if(buf!=NULL){
+    // overwriting the value field with \0, null characters
+    if (buf != NULL) {
         size_t len = strlen(newh->value);
-        if(len>=bufsize){
-            len=bufsize-1;
+        if (len >= bufsize) {
+            len = bufsize - 1; // we already have 1 null character at the end,
+                               // so to omit that
         }
-        strncpy(buf,newh->value, len);
-        buf[len]='\0';
+        strncpy(buf, newh->value, len);
+        // copy the null characters into the value field
+        buf[len] = '\0';
     }
     free(newh->value);
+    // releasing both
     free(newh);
+    // reducing the lenght
     q->len--;
     return true;
 }
@@ -233,13 +268,14 @@ bool queue_remove_head(queue_t *q, char *buf, size_t bufsize) {
 size_t queue_size(queue_t *q) {
     /* You need to write the code for this function */
     /* Remember: It should operate in O(1) time */
-    if (q==NULL){
+    // https://www.youtube.com/watch?v=ZhC1soR0zno&list=PLVlQHNRLflP_OxF1QJoGBwH_TnZszHR_j&index=8
+    // - covers basic of length but this is O(n) fetch the struct variable and
+    // display
+    if (q == NULL) {
         return 0;
+    } else {
+        return (q->len);
     }
-    else{
-        return(q->len);
-    }
-    
 }
 
 /**
@@ -253,27 +289,40 @@ size_t queue_size(queue_t *q) {
  */
 void queue_reverse(queue_t *q) {
     /* You need to write the code for this function */
-    if (q==NULL){
+    // Preliminary  queue check
+    if (q == NULL) {
         return;
-    }
-    else{
+    } else {
+        // initialising temp structures
         list_ele_t *newh1;
         list_ele_t *newh2;
         list_ele_t *newh3;
         list_ele_t *newh4;
-        newh1=NULL;
-        newh2=q->head;
-        if(q==NULL ||q->head==NULL){
+        newh1 = NULL; // does 2 jobs, initialising first elements next address
+                      // to null and swap
+        newh2 = q->head;
+        // checing if queue is initialised but does not have any element
+        if (q->head == NULL) {
             return;
         }
-        while(newh2!=NULL){
-            newh3=newh2->next;
-            newh2->next=newh1;
-            newh1=newh2;
-            newh2=newh3;
+        // swapping the nodes that are there from the head
+        //
+        while (newh2 != NULL) {
+            newh3 = newh2->next;
+            // store next block address in a pointer to swap next
+            newh2->next = newh1; // store current block address
+            newh1 = newh2;
+            // move to next blocks
+            newh2 = newh3;
         }
-        newh4=q->head;
-        q->head=q->back;
-        q->back=newh4;
+        // typecasting issue
+        //  q->head=(long*)((unsigned)q->head+(unsigned)q->back);
+        //  q->back=(long*)((unsigned)q->head-(unsigned)q->back);
+        //  q->head=q->head-q->back;
+        // using the method of temp to swap the addresses
+        newh4 = q->head;
+        // swapping first and last address
+        q->head = q->back;
+        q->back = newh4;
     }
 }
