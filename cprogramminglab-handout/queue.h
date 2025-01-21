@@ -44,12 +44,15 @@ typedef struct {
      *        queue is empty.
      */
     list_ele_t *head;
-    size_t len;
-    list_ele_t *back;
     /*
      * TODO: You will need to add more fields to this structure
      *       to efficiently implement q_size and q_insert_tail
      */
+    //adding field to maintain and update lenght when adding deleting node
+    size_t len;
+    //adding field to maintain the back address of the list so that we do not have to iterate over again
+    list_ele_t *back;
+    
 } queue_t;
 
 /************** Operations on queue ************************/
