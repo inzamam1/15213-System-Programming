@@ -2,7 +2,7 @@
  * CS:APP Data Lab
  *
  * <Please put your name and userid here>
- * Inzamam Sayyed - isayyed@
+ * Inzamam Sayyed - isayyed@andrew.cmu.edu (tobi-Autolab)
  *
  * bits.c - Source file with your solutions to the Lab.
  *          This is the file you will hand in to your instructor.
@@ -125,7 +125,9 @@ extern int printf(const char *, ...);
  *   Rating: 1
  */
 long bitMatch(long x, long y) {
-    return 2L;
+    long f = (~(~x & y) & ~(~y & x));
+    // printf(f);
+    return (f);
 }
 // 2
 /*
@@ -155,7 +157,8 @@ long bitMatch(long x, long y) {
  *   Rating: 2
  */
 long implication(long x, long y) {
-    return 2L;
+    long i = (y) | (!(y ^ x));
+    return i;
 }
 /*
  * leastBitPos - return a mask that marks the position of the
@@ -166,7 +169,8 @@ long implication(long x, long y) {
  *   Rating: 2
  */
 long leastBitPos(long x) {
-    return 2;
+    long y = x & (~x + 1);
+    return y;
 }
 /*
  * oddBits - return word with all odd-numbered bits set to 1
@@ -175,7 +179,11 @@ long leastBitPos(long x) {
  *   Rating: 2
  */
 long oddBits(void) {
-    return 2;
+    long x = 0xaa;
+    x += x << 8;
+    x += x << 16;
+    x += x << 32;
+    return x;
 }
 /*
  * dividePower2 - Compute x/(2^n), for 0 <= n <= 62
