@@ -48,12 +48,20 @@ typedef struct {
      * TODO: You will need to add more fields to this structure
      *       to efficiently implement q_size and q_insert_tail
      */
+<<<<<<< HEAD
     // adding field to maintain and update lenght when adding deleting node
     size_t len;
     // adding field to maintain the back address of the list so that we do not
     // have to iterate over again
     list_ele_t *back;
 
+=======
+    //adding field to maintain and update lenght when adding deleting node
+    size_t len;
+    //adding field to maintain the back address of the list so that we do not have to iterate over again
+    list_ele_t *back;
+    
+>>>>>>> 5b76d7635eace3f2f22b11d78322c6bb16a375e5
 } queue_t;
 
 /************** Operations on queue ************************/
