@@ -321,7 +321,11 @@ void queue_reverse(queue_t *q) {
         //  q->head=q->head-q->back;
         // using the method of temp to swap the addresses
         newh4 = q->head;
-        // swapping first and last address
+<<<<<<< HEAD
+        // swapping first and last address->head and back in the struct
+=======
+        // swapping first and last address->head and back in the struct 
+>>>>>>> 5b76d7635eace3f2f22b11d78322c6bb16a375e5
         q->head = q->back;
         q->back = newh4;
     }
