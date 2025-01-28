@@ -194,7 +194,17 @@ long oddBits(void) {
  *   Rating: 2
  */
 long dividePower2(long x, long n) {
-    return 2L;
+    //long y=1L;
+    //long z= y<<n;
+    // long bias = (x >> 32) & ((1 << n) + ~1 + 1);
+
+    // return (x + bias) >> n;
+    //return 2L;
+    //return x+(1<<n)-1;
+    long isNegative = x >> 63;        // Extract sign bit: -1 if negative, 0 if positive
+    long bias = (1L << n) + ~0L;     // Compute bias: (1 << n) - 1
+    long adjustedX = x + (isNegative & bias); // Add bias if x is negative
+    return adjustedX >> n;
 }
 // 3
 /*
@@ -205,7 +215,13 @@ long dividePower2(long x, long n) {
  *   Rating: 3
  */
 long isLessOrEqual(long x, long y) {
-    return 2;
+    long diff = y + (~x+1);
+    long sign = (diff>>63)&1;
+    long xsign = (x>>63)&1;
+    long ysign = (y>>63)&1;
+    long signDiff= xsign ^ ysign;
+
+    return (!sign&!signDiff)|(signDiff&xsign);
 }
 /*
  * rotateLeft - Rotate x to the left by n
@@ -217,7 +233,14 @@ long isLessOrEqual(long x, long y) {
  *   Rating: 3
  */
 long rotateLeft(long x, long n) {
-    return 2;
+    long y =x;
+    long sf=1L<<6;
+
+    long left= x<<n;
+    long right= y>>(sf+(~n+1));
+    right = right &((1L<<n)+~0);
+
+    return left|right;
 }
 /*
  * conditional - same as x ? y : z
@@ -227,7 +250,8 @@ long rotateLeft(long x, long n) {
  *   Rating: 3
  */
 long conditional(long x, long y, long z) {
-    return 2L;
+    long mask= ~(!x)+1;
+    return (~mask&y)|(mask&z);
 }
 /*
  * isLess - if x < y  then return 1, else return 0
@@ -237,7 +261,13 @@ long conditional(long x, long y, long z) {
  *   Rating: 3
  */
 long isLess(long x, long y) {
-    return 2L;
+    long diff = x + (~y+1);
+    long sign = (diff>>63)&1;
+    long xsign = (x>>63)&1;
+    long ysign = (y>>63)&1;
+    long signDiff= xsign ^ ysign;
+
+    return (sign&!signDiff)|(signDiff&xsign);
 }
 // 4
 /*
@@ -248,7 +278,87 @@ long isLess(long x, long y) {
  *   Rating: 4
  */
 long isPalindrome(long x) {
-    return 2L;
+    //long mask4=0xf;
+    // long mask8=0xff;
+    // long mask16=(mask8<<8)+mask8;
+    // long mask32=(mask16<<16)+mask16;
+
+    // long hi32 = (x >> 32) & mask32;     // Extract high 32 bits
+    // long lo32 = x & mask32;             // Extract low 32 bits
+
+    // // Reverse 32 bits in steps
+    //            // Mask for 16 bits
+    // long newhi16 = (lo32 & mask16) << 16;  // Extract low 16 bits and shift left
+    // long newlo16 = (lo32 >> 16) & mask16;  // Extract high 16 bits
+    // long lo32R16 = newhi16 | newlo16;      // Combine reversed 16-bit chunks
+
+    // // Reverse 16 bits
+    //                   // Mask for 8 bits
+    // long newhi8 = (lo32R16 & mask8) << 8;  // Extract low 8 bits and shift left
+    // long newlo8 = (lo32R16 >> 8) & mask8;  // Extract high 8 bits
+    // long lo32R8 = newhi8 | newlo8;         // Combine reversed 8-bit chunks
+
+    // // Reverse 8 bits
+    // long mask4 = 0xf;                   // Mask for 4 bits
+    // long newhi4 = (lo32R8 & mask4) << 4;   // Extract low 4 bits and shift left
+    // long newlo4 = (lo32R8 >> 4) & mask4;   // Extract high 4 bits
+    // long lo32R4 = newhi4 | newlo4;         // Combine reversed 4-bit chunks
+
+    // // Reverse 4 bits
+    // long mask2 = 0x3;                   // Mask for 2 bits
+    // long newhi2 = (lo32R4 & mask2) << 2;   // Extract low 2 bits and shift left
+    // long newlo2 = (lo32R4 >> 2) & mask2;   // Extract high 2 bits
+    // long lo32R2 = newhi2 | newlo2;         // Combine reversed 2-bit chunks
+
+    // // Reverse 2 bits
+    // long mask1 = 0x1;                   // Mask for 1 bit
+    // long newhi1 = (lo32R2 & mask1) << 1;   // Extract low bit and shift left
+    // long newlo1 = (lo32R2 >> 1) & mask1;   // Extract high bit
+    // long lo32R = newhi1 | newlo1;          // Combine reversed bits
+
+    // return !(hi32 ^ lo32R);                  // Return true if hi32 matches reversed lo32
+    long y = x;
+    long mask32=0xff;
+    mask32+=mask32<<8;
+    mask32+=mask32<<16;
+    long mask16 = 0x00; 
+    mask16= mask16<<4 | 0xff;
+    mask16= mask16<<8 | 0xff; //0x0000FFFF0000FFFF
+    mask16+=mask16<<32;
+    long mask8= 0x00; //0x00FF00FF00FF00FF
+    mask8=mask8<<8 | 0xff;
+    mask8+=mask8<<16;
+    mask8+=mask8<<32;
+    long mask4=0x00;
+    mask4=mask4<<4 | 0xf;
+    mask4+=mask4<<8;
+    mask4+=mask4<<16;
+    mask4+=mask4<<32;
+    long mask2=0x33;
+    //mask2+=mask2<<4;
+    mask2+=mask2<<8;
+    mask2+=mask2<<16;
+    mask2+=mask2<<32;
+    long mask1=0x55;
+    //mask1+=mask1<<4;
+    mask1+=mask1<<8;
+    mask1+=mask1<<16;
+    mask1+=mask1<<32;
+
+    // Reverse bits in groups of 32, 16, 8, 4, 2, and 1
+    y = ((y >> 32) & mask32) | ((y & mask32) << 32);
+    y = ((y >> 16) & mask16 ) | ((y & mask16) << 16);
+    y = ((y >> 8) & mask8) | ((y & mask8) << 8);
+    y = ((y >> 4) & mask4) | ((y & mask4) << 4);
+    y = ((y >> 2) & mask2) | ((y & mask2) << 2);
+    y = ((y >> 1) & mask1) | ((y & mask1) << 1);
+    
+    // Compare original and reversed bits using XOR
+    // Return 1 if palindrome (x == y), 0 otherwise
+    return !(x ^ y);
+    //return(mask2);
+
+
 }
 /*
  * trueThreeFourths - multiplies by 3/4 rounding toward 0,
