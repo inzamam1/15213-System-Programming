@@ -370,7 +370,10 @@ long isPalindrome(long x) {
  * overflow) Legal ops: ! ~ & ^ | + << >> Max ops: 20 Rating: 4
  */
 long trueThreeFourths(long x) {
-    return 2;
+    long eights = x >> 2;
+    long rem = x & 3;
+
+return eights + (eights << 1) + (((rem + (rem << 1)) + ((x >> 63) & 3)) >> 2);
 }
 /* howManyBits - return the minimum number of bits required to represent x in
  *             two's complement
@@ -385,5 +388,22 @@ long trueThreeFourths(long x) {
  *  Rating: 4
  */
 long howManyBits(long x) {
-    return 0L;
+    long b32,b16,b8,b4,b2,b1,b0;
+    long sign = x >> 63;
+    x = (sign & ~x) | (~sign & x);
+    b32 = !!(x >> 32) << 5;
+    x >>= b32;
+    b16 = !!(x >> 16) << 4;
+    x >>= b16;
+    b8 = !!(x >> 8) <<3;
+    x >>= b8;
+    b4 = !!(x >> 4) << 2;
+    x >>= b4;
+    b2 = !!(x >> 2) << 1;
+    x >>= b2;
+    b1 = !!(x >> 1);
+    x >>= b1;
+    b0 = x;
+
+  return b32+ b16 + b8 + b4 + b2 + b1 + b0 + 1;
 }
