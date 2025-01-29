@@ -125,9 +125,15 @@ extern int printf(const char *, ...);
  *   Rating: 1
  */
 long bitMatch(long x, long y) {
-    long f = (~(~x & y) & ~(~y & x));
-    // printf(f);
-    return (f);
+    //performing bitmatch by first seeing only the bits that are set in x and y
+    //bits set in x and y inclusive
+    long onlyx= ~x&y;
+    //bits set in y and x inclusive
+    long onlyy= ~y&x;
+    //now invert to also account for 0's and compare which two bits are equal
+    long match = (~onlyx & ~onlyy);
+    // printf(match);
+    return (match);
 }
 // 2
 /*
@@ -157,8 +163,12 @@ long bitMatch(long x, long y) {
  *   Rating: 2
  */
 long implication(long x, long y) {
-    long i = (y) | (!(y ^ x));
-    return i;
+    //return only 0 or 1?
+    //The condition here is on y, if y is 0 and x is 1, then also a is 0
+    //multiply y to the power of x and negate to get the value of 0 in only case 4
+    //then or with y to get the implication  
+    long im = (y) | (!(y ^ x));
+    return im;
 }
 /*
  * leastBitPos - return a mask that marks the position of the
@@ -169,8 +179,13 @@ long implication(long x, long y) {
  *   Rating: 2
  */
 long leastBitPos(long x) {
-    long y = x & (~x + 1);
-    return y;
+    //To find the least significant bit we can first find the 2's compliment of the number to 
+    //get the bit set from the right. but this will also make all the leading 0 bits 1.
+    long lb1= ~x+1;
+    //to set only the least bit and making other bits 0 we can and with x, to only include the lsb
+    //and make other leading bits 0
+    long lb = x & lb1;
+    return lb;
 }
 /*
  * oddBits - return word with all odd-numbered bits set to 1
@@ -179,11 +194,16 @@ long leastBitPos(long x) {
  *   Rating: 2
  */
 long oddBits(void) {
-    long x = 0xaa;
-    x += x << 8;
-    x += x << 16;
-    x += x << 32;
-    return x;
+    //make all odd bits 1, clarified on ed post https://edstem.org/us/courses/72024/discussion/5985056
+    //cannot initiaze the variable beyond 0xff, so first creating a mask for odd bits
+    // odd bits =  1010 pattern ~~a
+    // reverse divide and conquer approach?
+    long odd = 0xaa; //this is 10101010 (8 bits allowed)
+    odd += odd << 8; //this is 1010101010101010
+    odd += odd << 16; //this is 10101010101010101010101010101010
+    odd += odd << 32; //this is 1010101010101010101010101010101010101010101010101010101010101010
+    return odd;
+    //This was the easiest to work on XD
 }
 /*
  * dividePower2 - Compute x/(2^n), for 0 <= n <= 62
@@ -194,17 +214,25 @@ long oddBits(void) {
  *   Rating: 2
  */
 long dividePower2(long x, long n) {
-    //long y=1L;
-    //long z= y<<n;
-    // long bias = (x >> 32) & ((1 << n) + ~1 + 1);
-
-    // return (x + bias) >> n;
-    //return 2L;
-    //return x+(1<<n)-1;
-    long isNegative = x >> 63;        // Extract sign bit: -1 if negative, 0 if positive
-    long bias = (1L << n) + ~0L;     // Compute bias: (1 << n) - 1
-    long adjustedX = x + (isNegative & bias); // Add bias if x is negative
-    return adjustedX >> n;
+    //Divide by power 2 we can directly shift??
+    //long div=x>>n;
+    //return div;
+    //This works for unsigned/ positive numbers well, but -ve numbers doesnt work
+    //referred CS:APP Chapter 2, Pg 142 Dividing power 2 for unsigned, have to use bias and then shift
+    //Formula to consider from CS:App, (x<0? x+(1<<k)-1:x)>>k
+    //Have to take care of the sign as well, as it will go off if shifted before sign manipulation
+    // long sign = x >> 63;//last bit will be sign bit
+    // long bias = (1L << n)-1;
+    // long div = (x + (sign & bias));
+    // return div >> n; cannot use - operator, have to find other way to subtract.
+    // Extract sign bit
+    long sign = x >> 63;        
+    // Compute bias: (1 << n) - 1 here -1 = +~1L+1
+    long bias = (1L << n) + ~1L +1 ;
+    // Add bias if x is negative 0 if not negative, treat as positive 
+    long div = x + (sign & bias); 
+    //Now shift by n that would effectively do /2^n
+    return div >> n;
 }
 // 3
 /*
@@ -215,13 +243,20 @@ long dividePower2(long x, long n) {
  *   Rating: 3
  */
 long isLessOrEqual(long x, long y) {
+    //first substracting x from y to see if y is bigger
     long diff = y + (~x+1);
-    long sign = (diff>>63)&1;
+    //Extracting and Setting the sign of the difference which is the Highest bit, if y>x then this will be 0?
+    long signdiff = (diff>>63)&1;
+    //Extracting individual signs
     long xsign = (x>>63)&1;
     long ysign = (y>>63)&1;
-    long signDiff= xsign ^ ysign;
-
-    return (!sign&!signDiff)|(signDiff&xsign);
+    //Return 0 when both signs are same, both -ve or +ve, exclusive or
+    long diffsign= xsign ^ ysign;
+    //As the condition is on x ,Now check if the substracted sign and the sign of both the operands
+    long xsmall= diffsign&xsign;
+    //Also check if the sign was same for differcne and both the operand, if same then it would give 0 so negate
+    long bothsign= !signdiff&!diffsign;
+    return bothsign|xsmall;
 }
 /*
  * rotateLeft - Rotate x to the left by n
@@ -233,13 +268,20 @@ long isLessOrEqual(long x, long y) {
  *   Rating: 3
  */
 long rotateLeft(long x, long n) {
-    long y =x;
-    long sf=1L<<6;
-
+    //To rotate, we can just move the bits to left, but also have to take care 
+    //of the bits that are going off due to the left shift. This is more like arithmetic shift
+    //basic idea was shift left by n and create a copy of x and shift right the same bits by 64-n
+    //divide and conquer
+    long y = x;
+    long shiftright=1L<<6; //This will be 64
+    //shift x to left by n, now the new right n bits will be 0
     long left= x<<n;
-    long right= y>>(sf+(~n+1));
-    right = right &((1L<<n)+~0);
-
+    //this implements y=y>>(64-n)
+    long right= y>>(shiftright+(~n+1));
+    //this works for +ve numbers, for -ve numbers will have to do something simiar to bias
+    right = right &((1L<<n) + ~1L +1);
+    //if the number is -ve the right side will be modified, if not then it will be kept as is
+    //append both the left and right and return
     return left|right;
 }
 /*
@@ -250,7 +292,12 @@ long rotateLeft(long x, long n) {
  *   Rating: 3
  */
 long conditional(long x, long y, long z) {
+    //Handout problem
+    //return 0xff.... when x = 0 and 0x00 otherwise
+    //if x = 2, !x=0-> ~x =ffff -> +1 == 0000
     long mask= ~(!x)+1;
+    //now if x = 0 return z, else return y
+    //~0000=ffff& 4 | 0000 & 5. The second part is 0 here.
     return (~mask&y)|(mask&z);
 }
 /*
@@ -261,13 +308,21 @@ long conditional(long x, long y, long z) {
  *   Rating: 3
  */
 long isLess(long x, long y) {
+    //Checking the condition similar to the less and equal but no equal this time
+    //As condition revolves around x, subtracting y from x
     long diff = x + (~y+1);
-    long sign = (diff>>63)&1;
+    //Extracting the sign of the difference
+    long signdiff = (diff>>63)&1;
+    //Extracting individual signs
     long xsign = (x>>63)&1;
     long ysign = (y>>63)&1;
-    long signDiff= xsign ^ ysign;
-
-    return (sign&!signDiff)|(signDiff&xsign);
+    //Return 0 when both signs are same, both -ve or +ve, exclusive or
+    long diffsign= xsign ^ ysign;
+    //computing the small of both
+    long xsmall= diffsign&xsign;
+    //only check for less condition this time
+    long bothsign= signdiff&!diffsign;
+    return bothsign|xsmall;
 }
 // 4
 /*
@@ -278,84 +333,66 @@ long isLess(long x, long y) {
  *   Rating: 4
  */
 long isPalindrome(long x) {
-    //long mask4=0xf;
-    // long mask8=0xff;
-    // long mask16=(mask8<<8)+mask8;
-    // long mask32=(mask16<<16)+mask16;
-
-    // long hi32 = (x >> 32) & mask32;     // Extract high 32 bits
-    // long lo32 = x & mask32;             // Extract low 32 bits
-
-    // // Reverse 32 bits in steps
-    //            // Mask for 16 bits
-    // long newhi16 = (lo32 & mask16) << 16;  // Extract low 16 bits and shift left
-    // long newlo16 = (lo32 >> 16) & mask16;  // Extract high 16 bits
-    // long lo32R16 = newhi16 | newlo16;      // Combine reversed 16-bit chunks
-
-    // // Reverse 16 bits
-    //                   // Mask for 8 bits
-    // long newhi8 = (lo32R16 & mask8) << 8;  // Extract low 8 bits and shift left
-    // long newlo8 = (lo32R16 >> 8) & mask8;  // Extract high 8 bits
-    // long lo32R8 = newhi8 | newlo8;         // Combine reversed 8-bit chunks
-
-    // // Reverse 8 bits
-    // long mask4 = 0xf;                   // Mask for 4 bits
-    // long newhi4 = (lo32R8 & mask4) << 4;   // Extract low 4 bits and shift left
-    // long newlo4 = (lo32R8 >> 4) & mask4;   // Extract high 4 bits
-    // long lo32R4 = newhi4 | newlo4;         // Combine reversed 4-bit chunks
-
-    // // Reverse 4 bits
-    // long mask2 = 0x3;                   // Mask for 2 bits
-    // long newhi2 = (lo32R4 & mask2) << 2;   // Extract low 2 bits and shift left
-    // long newlo2 = (lo32R4 >> 2) & mask2;   // Extract high 2 bits
-    // long lo32R2 = newhi2 | newlo2;         // Combine reversed 2-bit chunks
-
-    // // Reverse 2 bits
-    // long mask1 = 0x1;                   // Mask for 1 bit
-    // long newhi1 = (lo32R2 & mask1) << 1;   // Extract low bit and shift left
-    // long newlo1 = (lo32R2 >> 1) & mask1;   // Extract high bit
-    // long lo32R = newhi1 | newlo1;          // Combine reversed bits
-
-    // return !(hi32 ^ lo32R);                  // Return true if hi32 matches reversed lo32
-    long y = x;
-    long mask32=0xff;
+    //divide and conquer-Reference Recitation Handout
+    //Palindrome==Reverse order should be same
+    //1001 reverse 1001-Palindrome, 1010 reverse 0101, not palindrome
+    //Idea here is to reverese each bit
+    //Using divide and conquer to create masks and then flipping the bits
+    //Number 1001, first divide into 10 01 and then rotate
+    // 01 10 , Now rotate again-> 10 01, now compare to original number 
+    //if matches pallindrome
+    //store x value in check variable to reverse and check later.
+    long check = x;
+    //Cant create a mask directly to flip 32 bits, so using shifting technique.
+    long mask32=0xff; 
     mask32+=mask32<<8;
-    mask32+=mask32<<16;
+    mask32+=mask32<<16; //0x00000000ffffffff
+    //This mask is to divide 32 bits and flip
     long mask16 = 0x00; 
     mask16= mask16<<4 | 0xff;
-    mask16= mask16<<8 | 0xff; //0x0000FFFF0000FFFF
-    mask16+=mask16<<32;
-    long mask8= 0x00; //0x00FF00FF00FF00FF
+    mask16= mask16<<8 | 0xff; 
+    mask16+=mask16<<32; //0x0000ffff0000ffff
+    //This mask is to divide 16 bits and flip
+    long mask8= 0x00; 
     mask8=mask8<<8 | 0xff;
     mask8+=mask8<<16;
-    mask8+=mask8<<32;
-    long mask4=0x00;
+    mask8+=mask8<<32; //0x00ff00ff00ff00ff
+    //This mask is to divide 8 bits and flip
+    long mask4=0x00; 
     mask4=mask4<<4 | 0xf;
     mask4+=mask4<<8;
     mask4+=mask4<<16;
-    mask4+=mask4<<32;
+    mask4+=mask4<<32;//0x0f0f0f0f0f0f0f0f
+    //This mask is to divide 4bits and flip
     long mask2=0x33;
     //mask2+=mask2<<4;
     mask2+=mask2<<8;
     mask2+=mask2<<16;
     mask2+=mask2<<32;
+    //This mask is to divide 2 bits and flip
+    //long mask1 =0x11;
     long mask1=0x55;
     //mask1+=mask1<<4;
     mask1+=mask1<<8;
     mask1+=mask1<<16;
     mask1+=mask1<<32;
+    //This mask is to divide 1 bit and flip
 
-    // Reverse bits in groups of 32, 16, 8, 4, 2, and 1
-    y = ((y >> 32) & mask32) | ((y & mask32) << 32);
-    y = ((y >> 16) & mask16 ) | ((y & mask16) << 16);
-    y = ((y >> 8) & mask8) | ((y & mask8) << 8);
-    y = ((y >> 4) & mask4) | ((y & mask4) << 4);
-    y = ((y >> 2) & mask2) | ((y & mask2) << 2);
-    y = ((y >> 1) & mask1) | ((y & mask1) << 1);
-    
-    // Compare original and reversed bits using XOR
-    // Return 1 if palindrome (x == y), 0 otherwise
-    return !(x ^ y);
+    // Reverse bits using the masks created
+    // Shift the 32 bits to left and mask, shift the right 32 bits and mask
+    check = ((check >> 32) & mask32) | ((check & mask32) << 32);
+    //Now in that 32 bits, shift 16 on either sides
+    check = ((check >> 16) & mask16 ) | ((check & mask16) << 16);
+    //Similarly rotate 8 bits 
+    check = ((check >> 8) & mask8) | ((check & mask8) << 8);
+    //Similarly rotate 4 bits
+    check = ((check >> 4) & mask4) | ((check & mask4) << 4);
+    //Similarly rotate 2 bits
+    check = ((check >> 2) & mask2) | ((check & mask2) << 2);
+    //Last bits to rotate
+    check = ((check >> 1) & mask1) | ((check & mask1) << 1);
+    // Compare original and reversed bits, if they are same return 1, else 0
+    return !(x ^ check);
     //return(mask2);
 
 
@@ -370,10 +407,24 @@ long isPalindrome(long x) {
  * overflow) Legal ops: ! ~ & ^ | + << >> Max ops: 20 Rating: 4
  */
 long trueThreeFourths(long x) {
-    long eights = x >> 2;
-    long rem = x & 3;
-
-return eights + (eights << 1) + (((rem + (rem << 1)) + ((x >> 63) & 3)) >> 2);
+    //Similar to the division by power of 2, but here, power is 2, k=2.
+    //To handloe overflow, first divide and then multiply
+    long div = x >> 2;
+    //to handle -ve values, extract the sign as seen in divPower2
+    long sign = x>>63;
+    //This division cuts the number by 2 bytes , making easy to add.
+    //Calculate the remiainder, becuase this was not working for odd numbers
+    //Also have to operate on the reminder.
+    long diff = x & ((1L<<2)+ ~1L +1);
+    //multiply the div by 3
+    // div*3 = div*2 + div, we can write this as div=div<<1 +div
+    div = (div<<1)+ div;
+    //Calculate for the difference as well
+    diff = (diff<<1)+diff;
+    //Also adding bias as seen in dividepower2 to handle -ve rounding
+    long bias = (1L<<2)+ ~1L +1;
+    //long bias= (1L << 2) + ~1L +1; 
+return div + ((diff + (sign&bias)) >> 2);
 }
 /* howManyBits - return the minimum number of bits required to represent x in
  *             two's complement
@@ -388,22 +439,81 @@ return eights + (eights << 1) + (((rem + (rem << 1)) + ((x >> 63) & 3)) >> 2);
  *  Rating: 4
  */
 long howManyBits(long x) {
-    long b32,b16,b8,b4,b2,b1,b0;
-    long sign = x >> 63;
-    x = (sign & ~x) | (~sign & x);
-    b32 = !!(x >> 32) << 5;
-    x >>= b32;
-    b16 = !!(x >> 16) << 4;
-    x >>= b16;
-    b8 = !!(x >> 8) <<3;
-    x >>= b8;
-    b4 = !!(x >> 4) << 2;
-    x >>= b4;
-    b2 = !!(x >> 2) << 1;
-    x >>= b2;
-    b1 = !!(x >> 1);
-    x >>= b1;
-    b0 = x;
+    //Adding the total numbre of bits required to represent a number
+    //Gettting the sign bit, logic here is that, the number has to be
+    //represented by atleast 1 bit, sign bit
+    //Extract the signbit
+    long signbit = x >> 63;
+    //To handle negative numbers, first change the number to its complement and then perform bit additions
+    long y = (signbit & ~x) | (~signbit & x);
+    // Trying the divide and conquer method as listed in the recitation:
+    // long mask1 = 0x55; // 0x01010101
+    // mask1+= mask1<<8;   
+    // mask1+= mask1<<16;
+    // mask1+= mask1<<32;
+    // long quarterSum = (y & mask1) + ((y >> 1) & mask1);
+    // long mask2 = 0x33 | (0x33 << 8); // 0x001100110011
+    // mask2+= mask2 << 8;   
+    // mask2+=  mask2 << 16;   
+    // long halfSum = (quarterSum & mask2) + ((quarterSum >> 2) & mask2);
+    // long mask3 = 0x0f; // 0000111100001111
+    // mask3+= mask3<< 8;   
+    // mask= mask3<<16;
+    // mask3+= mask3<< 32;   
+    // long byteSum = (halfSum & mask3) + ((halfSum >> 4) & mask3);
+    // long mask4 = 0xff;
+    // mask4+= mask4<<8;
+    // mask4+= mask4<<16;
+    // mask4+= mask4<<32;
+    // long wordSum = (byteSum & mask4) + ((byteSum >> 8) & mask4);
+    // long mask5 = 0xFF; // 0x0000FFFF
+    // mask5+= mask5<<8;
+    // mask5+= mask5 | (mask5 << 32); 
+    // long totalSum = (wordSum & mask5) + ((wordSum >> 16) & mask5);    
+    // Not working 
 
-  return b32+ b16 + b8 + b4 + b2 + b1 + b0 + 1;
+    //Alternate approach
+    //Initialise the sum of bits to 0
+    long sum =0L;
+    //A differenct approach to divide and conquer to count with the same principles of the 
+    // above approach
+    //the number of bits using bitwise operators and counting
+    //In this approach, we will use the bitwise operator !! to count the number of bits stored 
+    //in the first 32 bits and add it to our sum
+    // Reference- CodeWithRajRanjan-Solution 2 - Count set bits in a number
+    // Masking and Right shift operation | Bit Manipulation
+    // YouTube, Jan. 28, 2019. https://www.youtube.com/watch?v=GeipEH-g0e8 
+    long bit = !!(y >> 32) << 5;
+    y = y>>bit;
+    sum+=bit;
+    bit=0;
+    //Next moving to the 16 bits to identify the bits and add it 
+    bit = !!(y >> 16) << 4;
+    y = y>>bit;
+    sum+=bit;
+    bit=0;
+    // Do the same for the 8 bit
+    bit = !!(y >> 8) <<3;
+    y = y>>bit;
+    sum+=bit;
+    bit=0;
+    // Do the same for 4 bit
+    bit = !!(y >> 4) << 2;
+    y = y>> bit;
+    sum+=bit;
+    bit=0;
+    // 2 bit
+    bit = !!(y >> 2) << 1;
+    y = y>>bit;
+    sum+=bit;
+    bit=0;
+    //last bit
+    bit = !!(y >> 1);
+    y = y >>bit;
+    sum+=bit;
+    bit=0;
+    bit=y;
+    sum+=bit;
+    //Lastly, adding the 1 bit which is required to show the sign
+  return sum + 1;
 }
